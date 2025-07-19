@@ -4,9 +4,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>PDF Analyzer</title>
+    <title>Document Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js for PDF processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- Mammoth.js for DOCX processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -49,7 +52,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             </div>
-            <h1 class="text-4xl font-bold text-slate-900 tracking-tight">PDF Analyzer</h1>
+            <h1 class="text-4xl font-bold text-slate-900 tracking-tight">Document Analyzer</h1>
             <p class="text-lg text-slate-500 mt-2">Upload a document, ask a question, and get an AI-powered analysis instantly.</p>
         </header>
 
@@ -57,7 +60,7 @@
             
             <!-- Step 1: Upload Zone -->
             <div class="mb-8">
-                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your PDF</label>
+                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your Document</label>
                 <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50">
                     <!-- Default Prompt -->
                     <div class="upload-prompt flex flex-col items-center justify-center text-center space-y-2">
@@ -67,11 +70,11 @@
                         <p class="text-slate-500">
                             <label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                 Click to upload
-                                <input id="file-upload" type="file" class="sr-only" accept=".pdf"/>
+                                <input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx"/>
                             </label>
                             or drag and drop
                         </p>
-                        <p class="text-sm text-slate-400" id="file-name-display">PDF up to 10MB</p>
+                        <p class="text-sm text-slate-400" id="file-name-display">PDF or DOCX up to 10MB</p>
                     </div>
                     <!-- Uploading Spinner -->
                     <div class="upload-spinner flex-col items-center justify-center"><div class="loader"></div></div>
@@ -92,7 +95,7 @@
                 <textarea id="prompt" rows="4" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
                  <div class="text-center mt-4">
                     <button id="analyze-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
-                        Analyze PDF
+                        Analyze Document
                     </button>
                 </div>
             </div>
@@ -134,6 +137,7 @@
         const fileUpload = document.getElementById('file-upload');
         const reuploadButton = document.getElementById('reupload-button');
         const fileNameSuccess = document.getElementById('file-name-success');
+        const fileNameDisplay = document.getElementById('file-name-display');
         
         const initialPromptSection = document.getElementById('initial-prompt-section');
         const promptInput = document.getElementById('prompt');
@@ -148,11 +152,11 @@
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
 
-        let pdfText = '';
+        let documentText = '';
         let conversationHistory = [];
 
         const resetAll = () => {
-            pdfText = '';
+            documentText = '';
             conversationHistory = [];
             dropZone.classList.remove('is-uploading', 'is-success');
             initialPromptSection.classList.remove('hidden');
@@ -163,8 +167,12 @@
 
         const handleFile = (file) => {
             if (!file) return;
-            if (file.type !== 'application/pdf') {
-                showError("Please upload a valid PDF file.");
+            
+            const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+            const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx');
+
+            if (!isPdf && !isDocx) {
+                showError("Please upload a valid PDF or DOCX file.");
                 return;
             }
             
@@ -174,20 +182,29 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const typedarray = new Uint8Array(e.target.result);
-                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-                    let text = '';
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const content = await page.getTextContent();
-                        text += content.items.map(item => item.str).join(' ') + '\n';
+                    const arrayBuffer = e.target.result;
+                    if (isPdf) {
+                        const typedarray = new Uint8Array(arrayBuffer);
+                        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                        let text = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            text += content.items.map(item => item.str).join(' ') + '\n';
+                        }
+                        documentText = text;
+                    } else if (isDocx) {
+                        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                        documentText = result.value;
                     }
-                    pdfText = text;
+                    
                     dropZone.classList.remove('is-uploading');
                     dropZone.classList.add('is-success');
                     fileNameSuccess.textContent = file.name;
+
                 } catch (err) {
-                    showError("Could not read the PDF. It might be corrupted or protected.");
+                    console.error("File parsing error:", err);
+                    showError("Could not read the document. It might be corrupted or protected.");
                     resetAll();
                 }
             };
@@ -221,7 +238,7 @@
             try {
                 // Construct a context-aware prompt
                 let fullPrompt = `Based on the document text provided, please answer the user's question.`;
-                fullPrompt += `\n\n--- DOCUMENT TEXT ---\n${pdfText}\n\n--- END DOCUMENT ---`;
+                fullPrompt += `\n\n--- DOCUMENT TEXT ---\n${documentText}\n\n--- END DOCUMENT ---`;
                 
                 if (conversationHistory.length > 0) {
                     fullPrompt += `\n\n--- CONVERSATION HISTORY ---\n`;
@@ -265,7 +282,7 @@
                 chatLoaderWrapper.classList.add('hidden');
                 analyzeButton.disabled = false;
                 chatSendButton.disabled = false;
-                analyzeButton.textContent = "Analyze PDF";
+                analyzeButton.textContent = "Analyze Document";
             }
         };
 
@@ -282,7 +299,7 @@
 
         analyzeButton.addEventListener('click', () => {
             const userPrompt = promptInput.value.trim();
-            if (!pdfText) return showError("Please upload and process a PDF file first.");
+            if (!documentText) return showError("Please upload and process a document first.");
             if (!userPrompt) return showError("Please enter a prompt or question.");
 
             appendMessage('user', userPrompt);
