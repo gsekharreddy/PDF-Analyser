@@ -157,7 +157,7 @@
         });
 
         // Handle analyze button click
-        analyzeButton.addEventListener('click', async () => {
+        analyzeButton.addEventListener('click', async (). => {
             if (!pdfText) {
                 showError('Please upload and process a PDF file first.');
                 return;
@@ -178,8 +178,8 @@
             try {
                 const fullPrompt = `Based on the following document text, please answer this question: "${userPrompt}"\n\nDocument Text:\n${pdfText}`;
                 
-                // This now calls YOUR backend server, not Google's API directly.
-                const response = await fetch('http://localhost:3000/analyze', {
+                // This now calls the Vercel serverless function.
+                const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -187,12 +187,13 @@
                     body: JSON.stringify({ prompt: fullPrompt }),
                 });
 
-                if (!response.ok) {
-                    const errorResult = await response.json();
-                    throw new Error(errorResult.error || `Request failed with status ${response.status}`);
-                }
-
                 const result = await response.json();
+
+                if (!response.ok) {
+                    // Use the error message from the backend response
+                    throw new Error(result.error || `Request failed with status ${response.status}`);
+                }
+                
                 resultDiv.textContent = result.analysis;
 
             } catch (error) {
