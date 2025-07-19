@@ -1,4 +1,4 @@
-// /api/analyze.js - Vercel Serverless Function (Final Debugging Version)
+// /api/analyze.js - Vercel Serverless Function (Final Redeploy Version)
 
 import fetch from 'node-fetch';
 
