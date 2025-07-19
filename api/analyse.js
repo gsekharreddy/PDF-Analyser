@@ -24,13 +24,14 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
-    // Check if the API key is configured on Vercel
-    if (!GEMINI_API_KEY) {
-        console.error("Server Error: GEMINI_API_KEY is not configured.");
-        return res.status(500).json({ error: "The server is missing its API key configuration." });
-    }
-
     try {
+        // Check if the API key is configured on Vercel
+        if (!GEMINI_API_KEY) {
+            console.error("Server Error: GEMINI_API_KEY is not configured.");
+            // Send a clear JSON error
+            return res.status(500).json({ error: "The server is missing its API key configuration. Please set it in the Vercel project settings." });
+        }
+
         // Ensure there is a request body
         if (!req.body) {
             return res.status(400).json({ error: 'Request body is missing.' });
@@ -81,7 +82,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({ analysis: generatedText });
 
     } catch (error) {
-        // This will catch any unexpected errors, like network issues or JSON parsing errors.
+        // This will catch any unexpected errors and ensure a JSON response is sent.
         console.error('Internal Server Error:', error);
         return res.status(500).json({ error: `An internal server error occurred: ${error.message}` });
     }
