@@ -1,0 +1,14 @@
+{
+  "name": "pdf-analyzer-backend",
+  "version": "1.0.0",
+  "description": "Backend for the PDF Analyzer application.",
+  "main": "api/analyze.js",
+  "scripts": {
+    "start": "node api/analyze.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  },
+  "author": "",
+  "license": "ISC"
+}
