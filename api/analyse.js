@@ -1,17 +1,16 @@
-// /api/analyze.js - Vercel Serverless Function
+// /api/analyze.js - Vercel Serverless Function (using ES Modules)
 
-// Import Dependencies
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 // Securely Get API Key from Vercel Environment Variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const { GEMINI_API_KEY } = process.env;
 
 // The main function that Vercel will run
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     // Set CORS headers for all responses to allow frontend access
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     // Handle CORS pre-flight requests
     if (req.method === 'OPTIONS') {
@@ -25,16 +24,10 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Check if the API key is configured on Vercel
+        // **CRITICAL CHECK**: Ensure the API key is configured on Vercel
         if (!GEMINI_API_KEY) {
             console.error("Server Error: GEMINI_API_KEY is not configured.");
-            // Send a clear JSON error
-            return res.status(500).json({ error: "The server is missing its API key configuration. Please set it in the Vercel project settings." });
-        }
-
-        // Ensure there is a request body
-        if (!req.body) {
-            return res.status(400).json({ error: 'Request body is missing.' });
+            return res.status(500).json({ error: "Server configuration error: The API key is missing. Please check Vercel environment variables." });
         }
 
         const { prompt } = req.body;
@@ -52,7 +45,6 @@ module.exports = async (req, res) => {
             }]
         };
 
-        // Server-to-server call to Google API
         const geminiResponse = await fetch(geminiApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -70,11 +62,11 @@ module.exports = async (req, res) => {
         const generatedText = geminiResult?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!generatedText) {
-            console.error('No text in Gemini response:', geminiResult);
             const blockReason = geminiResult?.promptFeedback?.blockReason;
             const errorMessage = blockReason 
                 ? `Content was blocked by the API. Reason: ${blockReason}`
                 : 'Failed to get a valid response from the model.';
+            console.error('Response Error:', errorMessage, geminiResult);
             return res.status(500).json({ error: errorMessage });
         }
         
@@ -82,8 +74,7 @@ module.exports = async (req, res) => {
         return res.status(200).json({ analysis: generatedText });
 
     } catch (error) {
-        // This will catch any unexpected errors and ensure a JSON response is sent.
         console.error('Internal Server Error:', error);
-        return res.status(500).json({ error: `An internal server error occurred: ${error.message}` });
+        return res.status(500).json({ error: `An unexpected server error occurred: ${error.message}` });
     }
-};
+}

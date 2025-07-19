@@ -1,14 +1,9 @@
 {
-  "name": "pdf-analyzer-backend",
+  "name": "pdf-analyzer-vercel-backend",
   "version": "1.0.0",
-  "description": "Backend for the PDF Analyzer application.",
-  "main": "api/analyze.js",
-  "scripts": {
-    "start": "node api/analyze.js"
-  },
+  "description": "Backend for the PDF Analyzer application on Vercel.",
+  "type": "module",
   "dependencies": {
-    "node-fetch": "^2.6.7"
-  },
-  "author": "",
-  "license": "ISC"
+    "node-fetch": "^3.3.2"
+  }
 }
