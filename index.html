@@ -2,193 +2,242 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PDF Analyzer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .drop-zone-active { border-color: #3b82f6; background-color: #eff6ff; }
-    .upload-spinner, .upload-success { display: none; }
-    .is-uploading .upload-prompt { display: none; }
-    .is-uploading .upload-spinner { display: block; }
-    .is-success .upload-prompt { display: none; }
-    .is-success .upload-success { display: block; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PDF Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; /* Use a softer slate background */
+        }
+        .loader { 
+            border: 4px solid #e5e7eb; 
+            border-top: 4px solid #4f46e5; /* Indigo loader */
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        /* Hide dynamic UI elements by default */
+        .upload-spinner, .upload-success { 
+            display: none; 
+        }
+        /* State-based UI visibility */
+        .is-uploading .upload-prompt { display: none; }
+        .is-uploading .upload-spinner { display: flex; }
+        .is-success .upload-prompt, .is-success .upload-spinner { display: none; }
+        .is-success .upload-success { display: flex; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
-    <header class="text-center mb-8">
-      <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">PDF Analyzer</h1>
-      <p class="text-md sm:text-lg text-gray-600 mt-2">Upload a PDF, ask a question, and get AI-powered analysis.</p>
-    </header>
-
-    <main class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
-      <!-- Upload Zone -->
-      <div class="mb-6">
-        <label class="block text-lg font-semibold text-gray-700 mb-2">1. Upload your PDF</label>
-        <div id="drop-zone" class="mt-1 flex justify-center items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md min-h-[150px]">
-          <div class="upload-prompt space-y-1 text-center">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 48 48">
-              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <div class="text-sm text-gray-600">
-              <label for="file-upload" class="cursor-pointer text-indigo-600 hover:text-indigo-500">
-                Upload a file
-                <input id="file-upload" type="file" class="sr-only" accept=".pdf"/>
-              </label>
-              <p class="pl-1">or drag and drop</p>
+<body class="text-slate-800">
+    <div class="container mx-auto px-4 py-8 sm:py-12 md:py-16 max-w-2xl">
+        
+        <header class="text-center mb-10">
+            <div class="inline-flex items-center justify-center bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
             </div>
-            <p class="text-xs text-gray-500" id="file-name-display">PDF up to 10MB</p>
-          </div>
-          <div class="upload-spinner"><div class="loader"></div></div>
-          <div class="upload-success text-center">
-            <svg class="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p id="file-name-success" class="mt-2 text-sm font-medium text-gray-900"></p>
-          </div>
+            <h1 class="text-4xl font-bold text-slate-900 tracking-tight">PDF Analyzer</h1>
+            <p class="text-lg text-slate-500 mt-2">Upload a document, ask a question, and get an AI-powered analysis instantly.</p>
+        </header>
+
+        <main class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+            
+            <!-- Step 1: Upload Zone -->
+            <div class="mb-8">
+                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your PDF</label>
+                <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50">
+                    <!-- Default Prompt -->
+                    <div class="upload-prompt flex flex-col items-center justify-center text-center space-y-2">
+                        <svg class="h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <p class="text-slate-500">
+                            <label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                Click to upload
+                                <input id="file-upload" type="file" class="sr-only" accept=".pdf"/>
+                            </label>
+                            or drag and drop
+                        </p>
+                        <p class="text-sm text-slate-400" id="file-name-display">PDF up to 10MB</p>
+                    </div>
+                    <!-- Uploading Spinner -->
+                    <div class="upload-spinner flex-col items-center justify-center"><div class="loader"></div></div>
+                    <!-- Success Tick -->
+                    <div class="upload-success flex-col items-center justify-center text-center">
+                        <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p id="file-name-success" class="mt-2 text-sm font-medium text-slate-700"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Prompt Section -->
+            <div class="mb-6">
+                <label for="prompt" class="block text-lg font-semibold text-slate-800 mb-3">2. What do you want to know?</label>
+                <textarea id="prompt" rows="4" class="w-full border-slate-300 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
+            </div>
+
+            <!-- Analyze Button -->
+            <div class="text-center">
+                <button id="analyze-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+                    Analyze PDF
+                </button>
+            </div>
+        </main>
+        
+        <!-- Result Section -->
+        <div id="result-container" class="hidden mt-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">Analysis Result</h2>
+            <div class="flex justify-center items-center min-h-[100px]" id="loader-wrapper">
+                <div id="loader" class="loader"></div>
+            </div>
+            <div id="result" class="hidden bg-white p-6 rounded-lg border border-slate-200 text-slate-700 whitespace-pre-wrap shadow-sm"></div>
         </div>
-      </div>
 
-      <!-- Prompt Section -->
-      <div class="mb-6">
-        <label for="prompt" class="block text-lg font-semibold text-gray-700 mb-2">2. What do you want to know?</label>
-        <textarea id="prompt" rows="4" class="w-full border p-3 rounded-md" placeholder="e.g., Summarize this paper."></textarea>
-      </div>
+        <!-- Error Message -->
+        <div id="error-message" class="hidden mt-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
+            <p><strong class="font-bold">Error: </strong><span id="error-text"></span></p>
+        </div>
+        
+    </div>
 
-      <!-- Analyze Button -->
-      <div class="text-center mb-6">
-        <button id="analyze-button" class="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 disabled:bg-gray-400">
-          Analyze PDF
-        </button>
-      </div>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-      <!-- Result -->
-      <div id="result-container" class="hidden mt-8">
-        <h2 class="text-2xl font-bold mb-4">Analysis Result</h2>
-        <div id="loader" class="loader mx-auto my-4 hidden"></div>
-        <div id="result" class="bg-gray-50 p-4 rounded-lg border text-gray-700 whitespace-pre-wrap"></div>
-      </div>
+        // UI Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileUpload = document.getElementById('file-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const fileNameSuccess = document.getElementById('file-name-success');
+        const promptInput = document.getElementById('prompt');
+        const analyzeButton = document.getElementById('analyze-button');
+        const resultContainer = document.getElementById('result-container');
+        const resultDiv = document.getElementById('result');
+        const loaderWrapper = document.getElementById('loader-wrapper');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
 
-      <!-- Error Message -->
-      <div id="error-message" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        <strong>Error:</strong>
-        <span id="error-text"></span>
-      </div>
-    </main>
-  </div>
+        let pdfText = '';
 
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-
-    const fileUpload = document.getElementById('file-upload');
-    const dropZone = document.getElementById('drop-zone');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    const fileNameSuccess = document.getElementById('file-name-success');
-    const promptInput = document.getElementById('prompt');
-    const analyzeButton = document.getElementById('analyze-button');
-    const resultContainer = document.getElementById('result-container');
-    const resultDiv = document.getElementById('result');
-    const loader = document.getElementById('loader');
-    const errorMessage = document.getElementById('error-message');
-    const errorText = document.getElementById('error-text');
-
-    let pdfText = '';
-
-    const handleFile = (file) => {
-      if (file && file.type === 'application/pdf') {
-        hideError();
-        dropZone.classList.add('is-uploading');
-        dropZone.classList.remove('is-success');
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const typedarray = new Uint8Array(e.target.result);
-          try {
-            const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-            let text = '';
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const content = await page.getTextContent();
-              text += content.items.map(item => item.str).join(' ') + '\n';
-            }
-            pdfText = text;
-            dropZone.classList.remove('is-uploading');
-            dropZone.classList.add('is-success');
-            fileNameSuccess.textContent = file.name;
-          } catch {
-            showError("Could not extract text from the PDF.");
-            pdfText = '';
-          }
+        const resetUploadUI = () => {
+            dropZone.classList.remove('is-uploading', 'is-success');
+            fileNameDisplay.textContent = 'PDF up to 10MB';
         };
-        reader.readAsArrayBuffer(file);
-      } else {
-        showError("Please upload a valid PDF.");
-      }
-    };
 
-    fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drop-zone-active'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drop-zone-active');
-      handleFile(e.dataTransfer.files[0]);
-    });
+        const handleFile = (file) => {
+            if (!file) return;
+            if (file.type !== 'application/pdf') {
+                showError("Please upload a valid PDF file.");
+                return;
+            }
+            
+            hideError();
+            dropZone.classList.add('is-uploading');
+            dropZone.classList.remove('is-success');
 
-    analyzeButton.addEventListener('click', async () => {
-      if (!pdfText) return showError("Upload a PDF first.");
-      const userPrompt = promptInput.value.trim();
-      if (!userPrompt) return showError("Enter a prompt or question.");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const typedarray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+                    let text = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        text += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+                    pdfText = text;
+                    dropZone.classList.remove('is-uploading');
+                    dropZone.classList.add('is-success');
+                    fileNameSuccess.textContent = file.name;
+                } catch (err) {
+                    showError("Could not read the PDF. It might be corrupted or protected.");
+                    pdfText = '';
+                    resetUploadUI();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
 
-      hideError();
-      resultContainer.classList.remove('hidden');
-      loader.classList.remove('hidden');
-      resultDiv.classList.add('hidden');
-      analyzeButton.disabled = true;
-      analyzeButton.textContent = "Analyzing...";
-
-      try {
-        const fullPrompt = `Based on this document, answer: "${userPrompt}"\n\n${pdfText}`;
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: fullPrompt })
+        fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-50'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            handleFile(e.dataTransfer.files[0]);
         });
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          const raw = await response.text();
-          throw new Error("Invalid response format: " + raw.slice(0, 80));
+        analyzeButton.addEventListener('click', async () => {
+            if (!pdfText) {
+                showError("Please upload and process a PDF file first.");
+                return;
+            }
+            const userPrompt = promptInput.value.trim();
+            if (!userPrompt) {
+                showError("Please enter a prompt or question.");
+                return;
+            }
+
+            hideError();
+            resultContainer.classList.remove('hidden');
+            loaderWrapper.style.display = 'flex';
+            resultDiv.classList.add('hidden');
+            analyzeButton.disabled = true;
+            analyzeButton.textContent = "Analyzing...";
+
+            try {
+                const fullPrompt = `Based on the following document text, please answer this question: "${userPrompt}"\n\nDocument Text:\n${pdfText}`;
+                
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: fullPrompt })
+                });
+
+                // Check if the response is JSON, otherwise show the raw text error
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const rawText = await response.text();
+                    throw new Error(`Server returned an invalid response: ${rawText.slice(0, 100)}...`);
+                }
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || "An unknown error occurred.");
+                }
+
+                resultDiv.textContent = result.analysis;
+            } catch (err) {
+                showError(err.message);
+                resultDiv.textContent = '';
+            } finally {
+                loaderWrapper.style.display = 'none';
+                resultDiv.classList.remove('hidden');
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = "Analyze PDF";
+            }
+        });
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMessage.classList.remove('hidden');
         }
-
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Unknown error");
-
-        resultDiv.textContent = result.analysis;
-      } catch (err) {
-        showError(err.message);
-        resultDiv.textContent = '';
-      } finally {
-        loader.classList.add('hidden');
-        resultDiv.classList.remove('hidden');
-        analyzeButton.disabled = false;
-        analyzeButton.textContent = "Analyze PDF";
-      }
-    });
-
-    function showError(msg) {
-      errorText.textContent = msg;
-      errorMessage.classList.remove('hidden');
-    }
-    function hideError() {
-      errorMessage.classList.add('hidden');
-    }
-  </script>
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
