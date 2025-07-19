@@ -1,13 +1,10 @@
-// /api/analyze.js - Vercel Serverless Function (using ES Modules)
+// /api/analyze.js - Vercel Serverless Function (Final Debugging Version)
 
 import fetch from 'node-fetch';
 
-// Securely Get API Key from Vercel Environment Variables
-const { GEMINI_API_KEY } = process.env;
-
 // The main function that Vercel will run
 export default async function handler(req, res) {
-    // Set CORS headers for all responses to allow frontend access
+    // Set CORS headers for all responses
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,6 +13,19 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
+    
+    // --- START OF DEBUGGING LOGS ---
+    console.log("Function /api/analyze invoked.");
+    const { GEMINI_API_KEY } = process.env;
+
+    if (!GEMINI_API_KEY) {
+        console.error("CRITICAL ERROR: GEMINI_API_KEY is not found in environment variables.");
+        // Send a specific error back to the frontend
+        return res.status(500).json({ error: "Server configuration error: The API key is missing. Please check the Vercel project settings." });
+    } else {
+        console.log("GEMINI_API_KEY found.");
+    }
+    // --- END OF DEBUGGING LOGS ---
 
     // Ensure the request is a POST request
     if (req.method !== 'POST') {
@@ -24,12 +34,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // **CRITICAL CHECK**: Ensure the API key is configured on Vercel
-        if (!GEMINI_API_KEY) {
-            console.error("Server Error: GEMINI_API_KEY is not configured.");
-            return res.status(500).json({ error: "Server configuration error: The API key is missing. Please check Vercel environment variables." });
-        }
-
         const { prompt } = req.body;
 
         if (!prompt) {
@@ -66,11 +70,10 @@ export default async function handler(req, res) {
             const errorMessage = blockReason 
                 ? `Content was blocked by the API. Reason: ${blockReason}`
                 : 'Failed to get a valid response from the model.';
-            console.error('Response Error:', errorMessage, geminiResult);
+            console.error('Response Error:', errorMessage);
             return res.status(500).json({ error: errorMessage });
         }
         
-        // Send the successful response back to the frontend
         return res.status(200).json({ analysis: generatedText });
 
     } catch (error) {
