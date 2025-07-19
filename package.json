@@ -2,8 +2,5 @@
   "name": "pdf-analyzer-vercel-backend",
   "version": "1.0.0",
   "description": "Backend for the PDF Analyzer application on Vercel.",
-  "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  }
+  "type": "module"
 }
