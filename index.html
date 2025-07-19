@@ -27,6 +27,24 @@
             border-color: #3b82f6;
             background-color: #eff6ff;
         }
+        /* Hide elements by default */
+        .upload-spinner, .upload-success {
+            display: none;
+        }
+        /* Show spinner and hide default prompt when uploading */
+        .is-uploading .upload-prompt {
+            display: none;
+        }
+        .is-uploading .upload-spinner {
+            display: block;
+        }
+        /* Show success and hide default prompt when uploaded */
+        .is-success .upload-prompt {
+            display: none;
+        }
+        .is-success .upload-success {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -40,8 +58,9 @@
             <!-- File Upload Section -->
             <div class="mb-6">
                 <label class="block text-lg font-semibold text-gray-700 mb-2">1. Upload your PDF</label>
-                <div id="drop-zone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors">
-                    <div class="space-y-1 text-center">
+                <div id="drop-zone" class="mt-1 flex justify-center items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors min-h-[150px]">
+                    <!-- Default Prompt -->
+                    <div class="upload-prompt space-y-1 text-center">
                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
@@ -52,7 +71,16 @@
                             </label>
                             <p class="pl-1">or drag and drop</p>
                         </div>
-                        <p class="text-xs text-gray-500" id="file-name">PDF up to 10MB</p>
+                        <p class="text-xs text-gray-500" id="file-name-display">PDF up to 10MB</p>
+                    </div>
+                    <!-- Uploading Spinner -->
+                    <div class="upload-spinner">
+                        <div class="loader"></div>
+                    </div>
+                    <!-- Success Tick -->
+                    <div class="upload-success text-center">
+                         <svg class="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                         <p id="file-name-success" class="mt-2 text-sm font-medium text-gray-900"></p>
                     </div>
                 </div>
             </div>
@@ -90,7 +118,8 @@
 
         const fileUpload = document.getElementById('file-upload');
         const dropZone = document.getElementById('drop-zone');
-        const fileNameDisplay = document.getElementById('file-name');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const fileNameSuccess = document.getElementById('file-name-success');
         const promptInput = document.getElementById('prompt');
         const analyzeButton = document.getElementById('analyze-button');
         const resultContainer = document.getElementById('result-container');
@@ -104,7 +133,10 @@
         // Function to handle the file processing
         const handleFile = (file) => {
             if (file && file.type === 'application/pdf') {
-                fileNameDisplay.textContent = file.name;
+                hideError();
+                dropZone.classList.add('is-uploading');
+                dropZone.classList.remove('is-success');
+
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     const typedarray = new Uint8Array(e.target.result);
@@ -118,11 +150,20 @@
                         }
                         pdfText = text;
                         console.log("PDF text extracted successfully.");
-                        hideError();
+                        
+                        // Show success state
+                        dropZone.classList.remove('is-uploading');
+                        dropZone.classList.add('is-success');
+                        fileNameSuccess.textContent = file.name;
+
                     } catch (error) {
                         console.error('Error parsing PDF:', error);
                         showError('Failed to parse the PDF file. It might be corrupted or protected.');
                         pdfText = '';
+                        // Reset UI on error
+                        dropZone.classList.remove('is-uploading');
+                        dropZone.classList.remove('is-success');
+                        fileNameDisplay.textContent = 'PDF up to 10MB';
                     }
                 };
                 reader.readAsArrayBuffer(file);
