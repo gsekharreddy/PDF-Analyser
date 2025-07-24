@@ -1,156 +1,184 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Document Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js for PDF processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- Mammoth.js for DOCX processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .loader { border: 4px solid #e5e7eb; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .upload-spinner, .upload-success { display: none; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; /* Use a softer slate background */
+        }
+        .loader { 
+            border: 4px solid #e5e7eb; 
+            border-top: 4px solid #4f46e5; /* Indigo loader */
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        /* Hide dynamic UI elements by default */
+        .upload-spinner, .upload-success { 
+            display: none; 
+        }
+        /* State-based UI visibility */
         .is-uploading .upload-prompt { display: none; }
         .is-uploading .upload-spinner { display: flex; }
         .is-success .upload-prompt, .is-success .upload-spinner { display: none; }
         .is-success .upload-success { display: flex; }
+        /* Smooth scrolling for chat */
         #chat-history { scroll-behavior: smooth; }
     </style>
-    <script>
-        // Place in <head> to avoid theme flash
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
-    <div class="container mx-auto px-4 py-8 sm:py-12 md:py-16 max-w-3xl">
+<body class="text-slate-800">
+    <div class="container mx-auto px-4 py-8 sm:py-12 md:py-16 max-w-2xl">
+        
         <header class="text-center mb-10">
-            <div class="flex justify-center items-center mb-4">
-                <div class="inline-flex items-center justify-center bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-full w-16 h-16">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                </div>
+            <div class="inline-flex items-center justify-center bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
             </div>
-            <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">Document Analyzer</h1>
-            <p class="text-md sm:text-lg text-slate-500 dark:text-slate-400 mt-2">Upload a document, ask a question, and get an AI-powered analysis instantly.</p>
+            <h1 class="text-4xl font-bold text-slate-900 tracking-tight">Document Analyzer</h1>
+            <p class="text-lg text-slate-500 mt-2">Upload a document, ask a question, and get an AI-powered analysis instantly.</p>
         </header>
 
-        <div class="absolute top-4 right-4">
-            <button id="theme-toggle" type="button" class="text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200 dark:focus:ring-slate-700 rounded-lg text-sm p-2.5">
-                <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010-1.414l.707-.707a1 1 0 111.414 1.414l-.707.707a1 1 0 01-1.414 0zM10 18a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zM4.95 15.464a1 1 0 01-1.414 0l-.707-.707a1 1 0 011.414-1.414l.707.707a1 1 0 010 1.414zM2.75 10.5a1 1 0 01-1.414 0l-.707-.707a1 1 0 111.414-1.414l.707.707a1 1 0 010 1.414zM15.05 4.536a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414z"></path></svg>
-            </button>
-        </div>
-
-        <main class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+        <main class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
+            
+            <!-- Step 1: Upload Zone -->
             <div class="mb-8">
-                <label class="block text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">1. Upload your Document</label>
-                <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700">
+                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your Document</label>
+                <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50">
+                    <!-- Default Prompt -->
                     <div class="upload-prompt flex flex-col items-center justify-center text-center space-y-2">
-                        <svg class="h-12 w-12 text-slate-400 dark:text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <p class="text-slate-500 dark:text-slate-400"><label for="file-upload" class="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">Click to upload<input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx"/></label> or drag and drop</p>
-                        <p class="text-sm text-slate-400 dark:text-slate-500" id="file-name-display">PDF or DOCX up to 10MB</p>
+                        <svg class="h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <p class="text-slate-500">
+                            <label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                Click to upload
+                                <input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx"/>
+                            </label>
+                            or drag and drop
+                        </p>
+                        <p class="text-sm text-slate-400" id="file-name-display">PDF or DOCX up to 10MB</p>
                     </div>
+                    <!-- Uploading Spinner -->
                     <div class="upload-spinner flex-col items-center justify-center"><div class="loader"></div></div>
+                    <!-- Success Tick -->
                     <div class="upload-success flex-col items-center justify-center text-center">
-                        <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <p id="file-name-success" class="mt-2 text-sm font-medium text-slate-700 dark:text-slate-300"></p>
-                        <button id="reupload-button" class="mt-4 px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-100 dark:bg-indigo-900 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors">Upload Another File</button>
+                        <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p id="file-name-success" class="mt-2 text-sm font-medium text-slate-700"></p>
+                        <button id="reupload-button" class="mt-4 px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 transition-colors">Upload Another File</button>
                     </div>
                 </div>
             </div>
+
+            <!-- Step 2: Prompt Section -->
             <div id="initial-prompt-section" class="mb-6">
-                <label for="prompt" class="block text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">2. What do you want to know?</label>
-                <textarea id="prompt" rows="4" class="w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
+                <label for="prompt" class="block text-lg font-semibold text-slate-800 mb-3">2. What do you want to know?</label>
+                <textarea id="prompt" rows="4" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
                  <div class="text-center mt-4">
-                    <button id="analyze-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors">Analyze Document</button>
+                    <button id="analyze-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+                        Analyze Document
+                    </button>
                 </div>
             </div>
         </main>
         
+        <!-- Result & Chat Section -->
         <div id="result-container" class="hidden mt-8">
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4">Analysis & Chat</h2>
-            <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div id="chat-history" class="space-y-4 max-h-96 overflow-y-auto pr-4 mb-4"></div>
-                <div id="chat-loader-wrapper" class="hidden flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-                    <div class="loader !w-5 !h-5 !border-2"></div><span>Thinking...</span>
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">Analysis & Chat</h2>
+            <div class="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
+                <!-- Chat History -->
+                <div id="chat-history" class="space-y-4 max-h-96 overflow-y-auto pr-4 mb-4">
+                    <!-- Chat messages will be appended here -->
                 </div>
+                <!-- Chat Loader -->
+                <div id="chat-loader-wrapper" class="hidden flex items-center space-x-2 text-slate-500">
+                    <div class="loader !w-5 !h-5 !border-2"></div>
+                    <span>Thinking...</span>
+                </div>
+                <!-- Follow-up Prompt -->
                 <div class="mt-4 flex items-center space-x-2">
-                    <input type="text" id="chat-prompt" class="flex-grow w-full bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-50 placeholder-slate-400 dark:placeholder-slate-500 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ask a follow-up question...">
-                    <button id="chat-send-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-slate-400 dark:disabled:bg-slate-600 transition-colors">Send</button>
+                    <input type="text" id="chat-prompt" class="flex-grow w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ask a follow-up question...">
+                    <button id="chat-send-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-slate-400 transition-colors">Send</button>
                 </div>
             </div>
         </div>
+
+        <!-- Error Message -->
         <div id="error-message" class="hidden mt-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
             <p><strong class="font-bold">Error: </strong><span id="error-text"></span></p>
         </div>
+        
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-        
+
         // UI Elements
         const dropZone = document.getElementById('drop-zone');
         const fileUpload = document.getElementById('file-upload');
         const reuploadButton = document.getElementById('reupload-button');
         const fileNameSuccess = document.getElementById('file-name-success');
         const fileNameDisplay = document.getElementById('file-name-display');
+        
         const initialPromptSection = document.getElementById('initial-prompt-section');
         const promptInput = document.getElementById('prompt');
         const analyzeButton = document.getElementById('analyze-button');
+        
         const resultContainer = document.getElementById('result-container');
         const chatHistoryDiv = document.getElementById('chat-history');
         const chatLoaderWrapper = document.getElementById('chat-loader-wrapper');
         const chatPromptInput = document.getElementById('chat-prompt');
         const chatSendButton = document.getElementById('chat-send-button');
+
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
-        const themeToggleBtn = document.getElementById('theme-toggle');
-        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-        
+
         let documentText = '';
         let conversationHistory = [];
 
-        // --- DARK MODE LOGIC ---
-        const updateThemeIcon = () => {
-            if (document.documentElement.classList.contains('dark')) {
-                themeToggleDarkIcon.classList.add('hidden');
-                themeToggleLightIcon.classList.remove('hidden');
-            } else {
-                themeToggleDarkIcon.classList.remove('hidden');
-                themeToggleLightIcon.classList.add('hidden');
-            }
-        };
-        updateThemeIcon(); // Set initial icon
-        themeToggleBtn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            updateThemeIcon();
-        });
-
-        // --- FILE HANDLING & UI LOGIC ---
         const resetAll = () => {
-            documentText = ''; conversationHistory = [];
+            documentText = '';
+            conversationHistory = [];
             dropZone.classList.remove('is-uploading', 'is-success');
             initialPromptSection.classList.remove('hidden');
             resultContainer.classList.add('hidden');
-            chatHistoryDiv.innerHTML = ''; hideError();
+            chatHistoryDiv.innerHTML = '';
+            hideError();
         };
 
         const handleFile = (file) => {
             if (!file) return;
+            
             const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
             const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx');
-            if (!isPdf && !isDocx) { showError("Please upload a valid PDF or DOCX file."); return; }
-            resetAll(); dropZone.classList.add('is-uploading');
+
+            if (!isPdf && !isDocx) {
+                showError("Please upload a valid PDF or DOCX file.");
+                return;
+            }
+            
+            resetAll();
+            dropZone.classList.add('is-uploading');
+
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
@@ -169,9 +197,11 @@
                         const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                         documentText = result.value;
                     }
+                    
                     dropZone.classList.remove('is-uploading');
                     dropZone.classList.add('is-success');
                     fileNameSuccess.textContent = file.name;
+
                 } catch (err) {
                     console.error("File parsing error:", err);
                     showError("Could not read the document. It might be corrupted or protected.");
@@ -181,66 +211,66 @@
             reader.readAsArrayBuffer(file);
         };
         
-        const appendMessage = (sender, message, targetDiv) => {
+        const appendMessage = (sender, message) => {
+            const messageDiv = document.createElement('div');
             const formattedMessage = message.replace(/\n/g, '<br>');
             if (sender === 'user') {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'bg-slate-100 dark:bg-slate-700 p-3 rounded-lg text-right';
+                messageDiv.className = 'bg-slate-100 p-3 rounded-lg text-right';
                 messageDiv.innerHTML = `<p>${formattedMessage}</p>`;
-                chatHistoryDiv.appendChild(messageDiv);
-                return messageDiv;
             } else {
-                targetDiv.innerHTML = `<p>${formattedMessage}</p>`;
-                return targetDiv;
+                messageDiv.className = 'bg-indigo-50 p-3 rounded-lg';
+                messageDiv.innerHTML = `<p>${formattedMessage}</p>`;
             }
+            chatHistoryDiv.appendChild(messageDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
         };
 
-        // --- UPDATED API HANDLING WITH STREAMING ---
         const handleAnalysis = async (prompt, isInitial = false) => {
             hideError();
             chatLoaderWrapper.classList.remove('hidden');
-            analyzeButton.disabled = true; chatSendButton.disabled = true;
-            if (isInitial) { analyzeButton.textContent = "Analyzing..."; }
-
-            let fullPrompt = `Based on the document text provided, please answer the user's question.\n\n--- DOCUMENT TEXT ---\n${documentText}\n\n--- END DOCUMENT ---\n\n`;
-            if (conversationHistory.length > 0) {
-                fullPrompt += `--- CONVERSATION HISTORY ---\n`;
-                conversationHistory.forEach(msg => { fullPrompt += `${msg.role}: ${msg.content}\n`; });
-                fullPrompt += `--- END HISTORY ---\n\n`;
-            }
-            fullPrompt += `New User Question: "${prompt}"`;
+            analyzeButton.disabled = true;
+            chatSendButton.disabled = true;
             
-            // Create a placeholder for the assistant's streaming response
-            const assistantMessageDiv = document.createElement('div');
-            assistantMessageDiv.className = 'bg-indigo-50 dark:bg-indigo-900/70 p-3 rounded-lg';
-            chatHistoryDiv.appendChild(assistantMessageDiv);
-            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            if (isInitial) {
+                analyzeButton.textContent = "Analyzing...";
+            }
 
             try {
+                // Construct a context-aware prompt
+                let fullPrompt = `Based on the document text provided, please answer the user's question.`;
+                fullPrompt += `\n\n--- DOCUMENT TEXT ---\n${documentText}\n\n--- END DOCUMENT ---`;
+                
+                if (conversationHistory.length > 0) {
+                    fullPrompt += `\n\n--- CONVERSATION HISTORY ---\n`;
+                    conversationHistory.forEach(msg => {
+                        fullPrompt += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
+                    });
+                    fullPrompt += `--- END HISTORY ---`;
+                }
+                
+                fullPrompt += `\n\nNew User Question: "${prompt}"`;
+
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt: fullPrompt })
                 });
 
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const rawText = await response.text();
+                    throw new Error(`Server returned an invalid response: ${rawText.slice(0, 100)}...`);
+                }
+
+                const result = await response.json();
                 if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || `HTTP error! Status: ${response.status}`);
+                    throw new Error(result.error || "An unknown error occurred.");
                 }
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let fullResponse = "";
-                
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-                    fullResponse += decoder.decode(value, { stream: true });
-                    appendMessage('assistant', fullResponse, assistantMessageDiv);
-                    chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-                }
+                const analysis = result.analysis;
+                appendMessage('assistant', analysis);
+                conversationHistory.push({ role: 'assistant', content: analysis });
 
-                conversationHistory.push({ role: 'assistant', content: fullResponse });
                 if (isInitial) {
                     initialPromptSection.classList.add('hidden');
                     resultContainer.classList.remove('hidden');
@@ -248,10 +278,10 @@
 
             } catch (err) {
                 showError(err.message);
-                assistantMessageDiv.remove(); // Remove placeholder on error
             } finally {
                 chatLoaderWrapper.classList.add('hidden');
-                analyzeButton.disabled = false; chatSendButton.disabled = false;
+                analyzeButton.disabled = false;
+                chatSendButton.disabled = false;
                 analyzeButton.textContent = "Analyze Document";
             }
         };
@@ -261,27 +291,46 @@
         reuploadButton.addEventListener('click', resetAll);
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-50'));
-        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('border-indigo-500', 'bg-indigo-50'); handleFile(e.dataTransfer.files[0]); });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            handleFile(e.dataTransfer.files[0]);
+        });
 
-        const startAnalysis = (isInitial) => {
-            const inputEl = isInitial ? promptInput : chatPromptInput;
-            const userPrompt = inputEl.value.trim();
-            if ((isInitial && !documentText) || !userPrompt) {
-                showError(isInitial && !documentText ? "Please upload a document first." : "Please enter a prompt.");
-                return;
-            }
+        analyzeButton.addEventListener('click', () => {
+            const userPrompt = promptInput.value.trim();
+            if (!documentText) return showError("Please upload and process a document first.");
+            if (!userPrompt) return showError("Please enter a prompt or question.");
+
             appendMessage('user', userPrompt);
             conversationHistory.push({ role: 'user', content: userPrompt });
-            handleAnalysis(userPrompt, isInitial);
-            inputEl.value = '';
-        };
+            handleAnalysis(userPrompt, true);
+        });
 
-        analyzeButton.addEventListener('click', () => startAnalysis(true));
-        chatSendButton.addEventListener('click', () => startAnalysis(false));
-        chatPromptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); startAnalysis(false); } });
+        chatSendButton.addEventListener('click', () => {
+            const userPrompt = chatPromptInput.value.trim();
+            if (!userPrompt) return;
+
+            appendMessage('user', userPrompt);
+            conversationHistory.push({ role: 'user', content: userPrompt });
+            chatPromptInput.value = '';
+            handleAnalysis(userPrompt, false);
+        });
         
-        function showError(msg) { errorText.textContent = msg; errorMessage.classList.remove('hidden'); }
-        function hideError() { errorMessage.classList.add('hidden'); }
+        chatPromptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatSendButton.click();
+            }
+        });
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
     </script>
 </body>
 </html>
