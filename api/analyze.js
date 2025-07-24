@@ -1,87 +1,40 @@
-// In file: /api/analyze.js
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export const config = {
-  runtime: 'edge', // Use the Edge Runtime for better performance
-};
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-export default async function handler(req) {
-  // Handle preflight OPTIONS request for CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
-  }
-  
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: `Method ${req.method} Not Allowed` }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json', 'Allow': 'POST' },
-    });
+    res.setHeader('Allow', ['POST']);
+    return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   }
 
-  // Securely get the API key from Vercel's environment variables
   const { GEMINI_API_KEY } = process.env;
-  if (!GEMINI_API_KEY) {
-    const errorMessage = "API key not found. Please ensure GEMINI_API_KEY is set in your Vercel project's Environment Variables.";
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  if (!GEMINI_API_KEY) return res.status(500).json({ error: "Missing GEMINI_API_KEY in Vercel env." });
 
   try {
-    const { prompt } = await req.json();
-    if (!prompt) {
-      return new Response(JSON.stringify({ error: "Prompt is required." }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Prompt is required." });
 
-    // Call the Gemini API's streaming endpoint
-    const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }]
-      }),
+      })
     });
 
-    // **Improved Error Handling:** If the API call itself fails, provide a detailed error.
-    if (!apiResponse.ok) {
-        let errorBody;
-        try {
-            errorBody = await apiResponse.json();
-        } catch {
-            errorBody = { error: { message: "An unknown error occurred with the Gemini API." }};
-        }
-        console.error("Gemini API Error:", errorBody);
-        const detailedError = errorBody.error?.message || `API call failed with status: ${apiResponse.status}`;
-        return new Response(JSON.stringify({ error: `Gemini API Error: ${detailedError}` }), {
-            status: apiResponse.status,
-            headers: { 'Content-Type': 'application/json' },
-        });
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.error?.message || "Gemini API error." });
     }
 
-    // If the call is successful, stream the response body directly to the client
-    return new Response(apiResponse.body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
+    const output = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!output) return res.status(500).json({ error: "No output from model." });
 
+    res.status(200).json({ analysis: output });
   } catch (err) {
-    console.error("Server-side error:", err);
-    return new Response(JSON.stringify({ error: `An internal server error occurred: ${err.message}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    res.status(500).json({ error: "Server error: " + err.message });
   }
 }
