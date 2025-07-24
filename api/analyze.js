@@ -1,7 +1,7 @@
 // In file: /api/analyze.js
 
 export const config = {
-  runtime: 'edge', // Use the Edge Runtime for better performance and streaming
+  runtime: 'edge', // Use the Edge Runtime for better performance
 };
 
 export default async function handler(req) {
@@ -24,9 +24,11 @@ export default async function handler(req) {
     });
   }
 
+  // Securely get the API key from Vercel's environment variables
   const { GEMINI_API_KEY } = process.env;
   if (!GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: "GEMINI_API_KEY is not configured in Vercel environment variables." }), {
+    const errorMessage = "API key not found. Please ensure GEMINI_API_KEY is set in your Vercel project's Environment Variables.";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -41,7 +43,7 @@ export default async function handler(req) {
       });
     }
 
-    // Use the streaming endpoint for Gemini API
+    // Call the Gemini API's streaming endpoint
     const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,17 +52,25 @@ export default async function handler(req) {
       }),
     });
 
+    // **Improved Error Handling:** If the API call itself fails, provide a detailed error.
     if (!apiResponse.ok) {
-        const errorBody = await apiResponse.json();
+        let errorBody;
+        try {
+            errorBody = await apiResponse.json();
+        } catch {
+            errorBody = { error: { message: "An unknown error occurred with the Gemini API." }};
+        }
         console.error("Gemini API Error:", errorBody);
-        return new Response(JSON.stringify({ error: errorBody.error?.message || "Failed to connect to Gemini API." }), {
+        const detailedError = errorBody.error?.message || `API call failed with status: ${apiResponse.status}`;
+        return new Response(JSON.stringify({ error: `Gemini API Error: ${detailedError}` }), {
             status: apiResponse.status,
             headers: { 'Content-Type': 'application/json' },
         });
     }
 
-    // The body is already a stream. We can pipe it directly.
+    // If the call is successful, stream the response body directly to the client
     return new Response(apiResponse.body, {
+      status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
@@ -69,7 +79,7 @@ export default async function handler(req) {
 
   } catch (err) {
     console.error("Server-side error:", err);
-    return new Response(JSON.stringify({ error: "An internal server error occurred." }), {
+    return new Response(JSON.stringify({ error: `An internal server error occurred: ${err.message}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
