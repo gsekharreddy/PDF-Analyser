@@ -12,45 +12,34 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
-    // --- STEP 1: Update your Vercel Environment Variable ---
-    // This now looks for 'API_KEY'
-    const { API_KEY } = process.env;
-    if (!API_KEY) return res.status(500).json({ error: "Missing API_KEY in Vercel env." });
-    // ---------------------------------------------------------
+    const { GEMINI_API_KEY } = process.env;
+    if (!GEMINI_API_KEY) return res.status(500).json({ error: "Missing GEMINI_API_KEY in Vercel env." });
 
     try {
         const { prompt } = req.body;
         if (!prompt) return res.status(400).json({ error: "Prompt is required." });
 
-        // --- STEP 2: API Details for DeepSeek ---
-        const modelName = 'deepseek-chat'; // Or 'deepseek-coder' for coding tasks
-        const apiUrl = 'https://api.deepseek.com/chat/completions';
-        // -----------------------------------------
+        // --- ⬇️ STEP 1: CHANGE THE MODEL NAME HERE ⬇️ ---
+        // You can swap this with other models like 'gemini-1.5-pro-latest'.
+        const modelName = 'gemini-1.5-flash-latest';
+        // ----------------------------------------------------
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
 
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                // DeepSeek uses a Bearer token for authentication
-                'Authorization': `Bearer ${API_KEY}`
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // DeepSeek uses a 'messages' array structure
-                messages: [
-                    { "role": "user", "content": prompt }
-                ],
-                model: modelName
+                contents: [{ role: "user", parts: [{ text: prompt }] }]
             })
         });
 
         const data = await response.json();
         if (!response.ok) {
-            // Forward the error message from DeepSeek's API
-            return res.status(response.status).json({ error: data.error?.message || "DeepSeek API error." });
+            return res.status(response.status).json({ error: data.error?.message || "Gemini API error." });
         }
 
-        // Extract the text from DeepSeek's response structure
-        const output = data.choices?.[0]?.message?.content;
+        const output = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!output) return res.status(500).json({ error: "No output from model." });
 
         res.status(200).json({ analysis: output });
