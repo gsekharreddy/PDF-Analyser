@@ -14,11 +14,11 @@
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #f8fafc; /* Use a softer slate background */
+            background-color: #f8fafc;
         }
         .loader { 
             border: 4px solid #e5e7eb; 
-            border-top: 4px solid #4f46e5; /* Indigo loader */
+            border-top: 4px solid #4f46e5;
             border-radius: 50%; 
             width: 40px; 
             height: 40px; 
@@ -28,16 +28,13 @@
             0% { transform: rotate(0deg); } 
             100% { transform: rotate(360deg); } 
         }
-        /* Hide dynamic UI elements by default */
         .upload-spinner, .upload-success { 
             display: none; 
         }
-        /* State-based UI visibility */
         .is-uploading .upload-prompt { display: none; }
         .is-uploading .upload-spinner { display: flex; }
         .is-success .upload-prompt, .is-success .upload-spinner { display: none; }
         .is-success .upload-success { display: flex; }
-        /* Smooth scrolling for chat */
         #chat-history { scroll-behavior: smooth; }
     </style>
 </head>
@@ -51,47 +48,41 @@
                 </svg>
             </div>
             <h1 class="text-4xl font-bold text-slate-900 tracking-tight">Document Analyzer</h1>
-            <p class="text-lg text-slate-500 mt-2">Upload a document, ask a question, and get an AI-powered analysis instantly.</p>
+            <p class="text-lg text-slate-500 mt-2">Upload a file, paste text, ask a question, and get an AI-powered analysis instantly.</p>
         </header>
 
         <main class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
             
             <div class="mb-8">
-                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your Document</label>
+                <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload a Document</label>
                 <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50">
                     <div class="upload-prompt flex flex-col items-center justify-center text-center space-y-2">
-                        <svg class="h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <p class="text-slate-500">
-                            <label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                Click to upload
-                                <input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx,.png,.jpg,.jpeg"/>
-                            </label>
-                            or drag and drop
-                        </p>
-                        <p class="text-sm text-slate-400" id="file-name-display">PDF, DOCX, PNG or JPG up to 10MB</p>
+                        <svg class="h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <p class="text-slate-500"><label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">Click to upload<input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx,.png,.jpg,.jpeg,.txt"/></label> or drag and drop</p>
+                        <p class="text-sm text-slate-400" id="file-name-display">PDF, DOCX, TXT, PNG or JPG up to 10MB</p>
                     </div>
-                    <div class="upload-spinner flex-col items-center justify-center space-y-2">
-                        <div class="loader"></div>
-                        <p id="upload-status" class="text-sm text-slate-500">Uploading...</p>
-                    </div>
+                    <div class="upload-spinner flex-col items-center justify-center space-y-2"><div class="loader"></div><p id="upload-status" class="text-sm text-slate-500">Uploading...</p></div>
                     <div class="upload-success flex-col items-center justify-center text-center">
-                        <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                        <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <p id="file-name-success" class="mt-2 text-sm font-medium text-slate-700"></p>
-                        <button id="reupload-button" class="mt-4 px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 transition-colors">Upload Another File</button>
+                        <button id="reupload-button" class="mt-4 px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200 transition-colors">Start Over</button>
                     </div>
                 </div>
             </div>
 
+            <div class="text-center my-6"><span class="text-slate-400 font-semibold">OR</span></div>
+
+            <div class="mb-8">
+                 <label for="text-input" class="block text-lg font-semibold text-slate-800 mb-3">Paste Your Text Here</label>
+                 <textarea id="text-input" rows="6" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Paste any text content you want to analyze..."></textarea>
+            </div>
+
             <div id="initial-prompt-section" class="mb-6">
                 <label for="prompt" class="block text-lg font-semibold text-slate-800 mb-3">2. What do you want to know?</label>
-                <textarea id="prompt" rows="4" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
+                <textarea id="prompt" rows="4" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings."></textarea>
                  <div class="text-center mt-4">
                     <button id="analyze-button" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
-                        Analyze Document
+                        Analyze
                     </button>
                 </div>
             </div>
@@ -100,12 +91,8 @@
         <div id="result-container" class="hidden mt-8">
             <h2 class="text-2xl font-bold text-slate-900 mb-4">Analysis & Chat</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
-                <div id="chat-history" class="space-y-4 max-h-96 overflow-y-auto pr-4 mb-4">
-                    </div>
-                <div id="chat-loader-wrapper" class="hidden flex items-center space-x-2 text-slate-500">
-                    <div class="loader !w-5 !h-5 !border-2"></div>
-                    <span>Thinking...</span>
-                </div>
+                <div id="chat-history" class="space-y-4 max-h-96 overflow-y-auto pr-4 mb-4"></div>
+                <div id="chat-loader-wrapper" class="hidden flex items-center space-x-2 text-slate-500"><div class="loader !w-5 !h-5 !border-2"></div><span>Thinking...</span></div>
                 <div class="mt-4 flex items-center space-x-2">
                     <input type="text" id="chat-prompt" class="flex-grow w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ask a follow-up question...">
                     <button id="chat-send-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-slate-400 transition-colors">Send</button>
@@ -125,9 +112,9 @@
         // UI Elements
         const dropZone = document.getElementById('drop-zone');
         const fileUpload = document.getElementById('file-upload');
+        const textInput = document.getElementById('text-input');
         const reuploadButton = document.getElementById('reupload-button');
         const fileNameSuccess = document.getElementById('file-name-success');
-        const fileNameDisplay = document.getElementById('file-name-display');
         const uploadStatus = document.getElementById('upload-status');
         
         const initialPromptSection = document.getElementById('initial-prompt-section');
@@ -149,8 +136,9 @@
         const resetAll = () => {
             documentText = '';
             conversationHistory = [];
+            fileUpload.value = ''; // Clear file input
+            textInput.value = ''; // Clear text area
             dropZone.classList.remove('is-uploading', 'is-success');
-            initialPromptSection.classList.remove('hidden');
             resultContainer.classList.add('hidden');
             chatHistoryDiv.innerHTML = '';
             uploadStatus.textContent = 'Uploading...';
@@ -162,23 +150,24 @@
             
             const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
             const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx');
+            const isTxt = file.type === 'text/plain' || file.name.endsWith('.txt');
             const isImage = file.type.startsWith('image/');
 
-            if (!isPdf && !isDocx && !isImage) {
-                showError("Please upload a valid PDF, DOCX, or Image file.");
+            if (!isPdf && !isDocx && !isImage && !isTxt) {
+                showError("Please upload a valid PDF, DOCX, TXT, or Image file.");
                 return;
             }
             
             resetAll();
+            textInput.disabled = true; // Disable text input when file is being processed
             dropZone.classList.add('is-uploading');
 
             try {
+                 const reader = new FileReader();
                 if (isPdf) {
                     uploadStatus.textContent = 'Processing PDF...';
-                    const reader = new FileReader();
                     reader.onload = async (e) => {
-                        const arrayBuffer = e.target.result;
-                        const typedarray = new Uint8Array(arrayBuffer);
+                        const typedarray = new Uint8Array(e.target.result);
                         const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
                         let text = '';
                         for (let i = 1; i <= pdf.numPages; i++) {
@@ -192,14 +181,19 @@
                     reader.readAsArrayBuffer(file);
                 } else if (isDocx) {
                     uploadStatus.textContent = 'Processing DOCX...';
-                    const reader = new FileReader();
                     reader.onload = async (e) => {
-                        const arrayBuffer = e.target.result;
-                        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                        const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
                         documentText = result.value;
                         onFileProcessed(file);
                     };
                     reader.readAsArrayBuffer(file);
+                } else if (isTxt) {
+                    uploadStatus.textContent = 'Reading text file...';
+                    reader.onload = (e) => {
+                        documentText = e.target.result;
+                        onFileProcessed(file);
+                    };
+                    reader.readAsText(file);
                 } else if (isImage) {
                     uploadStatus.textContent = 'Performing OCR...';
                     const { data: { text } } = await Tesseract.recognize(
@@ -214,30 +208,26 @@
                     documentText = text;
                     onFileProcessed(file);
                 }
-
             } catch (err) {
-                console.error("File parsing error:", err);
-                showError("Could not read the document. It might be corrupted, protected, or an unsupported format.");
+                console.error("File processing error:", err);
+                showError("Could not read the document. It might be corrupted or protected.");
                 resetAll();
+            } finally {
+                textInput.disabled = false;
             }
         };
 
         const onFileProcessed = (file) => {
             dropZone.classList.remove('is-uploading');
             dropZone.classList.add('is-success');
-            fileNameSuccess.textContent = file.name;
+            fileNameSuccess.textContent = `Processed: ${file.name}`;
         };
-        
+
         const appendMessage = (sender, message) => {
             const messageDiv = document.createElement('div');
             const formattedMessage = message.replace(/\n/g, '<br>');
-            if (sender === 'user') {
-                messageDiv.className = 'bg-slate-100 p-3 rounded-lg text-right';
-                messageDiv.innerHTML = `<p>${formattedMessage}</p>`;
-            } else {
-                messageDiv.className = 'bg-indigo-50 p-3 rounded-lg';
-                messageDiv.innerHTML = `<p>${formattedMessage}</p>`;
-            }
+            messageDiv.className = sender === 'user' ? 'bg-slate-100 p-3 rounded-lg text-right' : 'bg-indigo-50 p-3 rounded-lg';
+            messageDiv.innerHTML = `<p>${formattedMessage}</p>`;
             chatHistoryDiv.appendChild(messageDiv);
             chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
         };
@@ -248,15 +238,10 @@
             analyzeButton.disabled = true;
             chatSendButton.disabled = true;
             
-            if (isInitial) {
-                analyzeButton.textContent = "Analyzing...";
-            }
+            if (isInitial) analyzeButton.textContent = "Analyzing...";
 
             try {
-                // Construct a context-aware prompt
-                let fullPrompt = `Based on the document text provided, please answer the user's question.`;
-                fullPrompt += `\n\n--- DOCUMENT TEXT ---\n${documentText}\n\n--- END DOCUMENT ---`;
-                
+                let fullPrompt = `Based on the provided text, please answer the user's question.\n\n--- DOCUMENT TEXT ---\n${documentText}\n\n--- END DOCUMENT ---`;
                 if (conversationHistory.length > 0) {
                     fullPrompt += `\n\n--- CONVERSATION HISTORY ---\n`;
                     conversationHistory.forEach(msg => {
@@ -264,7 +249,6 @@
                     });
                     fullPrompt += `--- END HISTORY ---`;
                 }
-                
                 fullPrompt += `\n\nNew User Question: "${prompt}"`;
 
                 const response = await fetch('/api/analyze', {
@@ -273,23 +257,17 @@
                     body: JSON.stringify({ prompt: fullPrompt })
                 });
 
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const rawText = await response.text();
-                    throw new Error(`Server returned an invalid response: ${rawText.slice(0, 100)}...`);
+                if (!response.ok) {
+                    const result = await response.json().catch(() => ({}));
+                    throw new Error(result.error || `Server returned status ${response.status}`);
                 }
 
                 const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.error || "An unknown error occurred.");
-                }
-
                 const analysis = result.analysis;
                 appendMessage('assistant', analysis);
                 conversationHistory.push({ role: 'assistant', content: analysis });
 
                 if (isInitial) {
-                    initialPromptSection.classList.add('hidden');
                     resultContainer.classList.remove('hidden');
                 }
 
@@ -299,35 +277,44 @@
                 chatLoaderWrapper.classList.add('hidden');
                 analyzeButton.disabled = false;
                 chatSendButton.disabled = false;
-                analyzeButton.textContent = "Analyze Document";
+                if(isInitial) analyzeButton.textContent = "Analyze";
             }
         };
 
         // Event Listeners
         fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
         reuploadButton.addEventListener('click', resetAll);
+        
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-500', 'bg-indigo-50'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500', 'bg-indigo-50'));
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
-            handleFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
         });
 
         analyzeButton.addEventListener('click', () => {
+            const pastedText = textInput.value.trim();
+            if (pastedText) {
+                documentText = pastedText;
+                fileUpload.value = ''; // Clear file input if text is used
+                dropZone.classList.remove('is-success', 'is-uploading');
+            }
+
             const userPrompt = promptInput.value.trim();
-            if (!documentText) return showError("Please upload and process a document first.");
-            if (!userPrompt) return showError("Please enter a prompt or question.");
+            if (!documentText) return showError("Please upload a file or paste some text first.");
+            if (!userPrompt) return showError("Please enter a question to ask about the text.");
 
             appendMessage('user', userPrompt);
             conversationHistory.push({ role: 'user', content: userPrompt });
             handleAnalysis(userPrompt, true);
         });
-
+        
         chatSendButton.addEventListener('click', () => {
             const userPrompt = chatPromptInput.value.trim();
             if (!userPrompt) return;
-
             appendMessage('user', userPrompt);
             conversationHistory.push({ role: 'user', content: userPrompt });
             chatPromptInput.value = '';
