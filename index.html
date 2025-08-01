@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Document Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF.js for PDF processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <!-- Mammoth.js for DOCX processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -58,11 +56,9 @@
 
         <main class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200">
             
-            <!-- Step 1: Upload Zone -->
             <div class="mb-8">
                 <label class="block text-lg font-semibold text-slate-800 mb-3">1. Upload your Document</label>
                 <div id="drop-zone" class="relative flex flex-col justify-center items-center p-8 border-2 border-slate-300 border-dashed rounded-lg min-h-[180px] transition-all duration-300 hover:border-indigo-500 hover:bg-indigo-50">
-                    <!-- Default Prompt -->
                     <div class="upload-prompt flex flex-col items-center justify-center text-center space-y-2">
                         <svg class="h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -70,15 +66,16 @@
                         <p class="text-slate-500">
                             <label for="file-upload" class="font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                 Click to upload
-                                <input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx"/>
+                                <input id="file-upload" type="file" class="sr-only" accept=".pdf,.docx,.png,.jpg,.jpeg"/>
                             </label>
                             or drag and drop
                         </p>
-                        <p class="text-sm text-slate-400" id="file-name-display">PDF or DOCX up to 10MB</p>
+                        <p class="text-sm text-slate-400" id="file-name-display">PDF, DOCX, PNG or JPG up to 10MB</p>
                     </div>
-                    <!-- Uploading Spinner -->
-                    <div class="upload-spinner flex-col items-center justify-center"><div class="loader"></div></div>
-                    <!-- Success Tick -->
+                    <div class="upload-spinner flex-col items-center justify-center space-y-2">
+                        <div class="loader"></div>
+                        <p id="upload-status" class="text-sm text-slate-500">Uploading...</p>
+                    </div>
                     <div class="upload-success flex-col items-center justify-center text-center">
                         <svg class="h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -89,7 +86,6 @@
                 </div>
             </div>
 
-            <!-- Step 2: Prompt Section -->
             <div id="initial-prompt-section" class="mb-6">
                 <label for="prompt" class="block text-lg font-semibold text-slate-800 mb-3">2. What do you want to know?</label>
                 <textarea id="prompt" rows="4" class="w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="e.g., Summarize the key findings of this paper."></textarea>
@@ -101,20 +97,15 @@
             </div>
         </main>
         
-        <!-- Result & Chat Section -->
         <div id="result-container" class="hidden mt-8">
             <h2 class="text-2xl font-bold text-slate-900 mb-4">Analysis & Chat</h2>
             <div class="bg-white p-4 sm:p-6 rounded-lg border border-slate-200 shadow-sm">
-                <!-- Chat History -->
                 <div id="chat-history" class="space-y-4 max-h-96 overflow-y-auto pr-4 mb-4">
-                    <!-- Chat messages will be appended here -->
-                </div>
-                <!-- Chat Loader -->
+                    </div>
                 <div id="chat-loader-wrapper" class="hidden flex items-center space-x-2 text-slate-500">
                     <div class="loader !w-5 !h-5 !border-2"></div>
                     <span>Thinking...</span>
                 </div>
-                <!-- Follow-up Prompt -->
                 <div class="mt-4 flex items-center space-x-2">
                     <input type="text" id="chat-prompt" class="flex-grow w-full bg-slate-100 border-slate-300 text-slate-900 placeholder-slate-400 p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Ask a follow-up question...">
                     <button id="chat-send-button" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-slate-400 transition-colors">Send</button>
@@ -122,7 +113,6 @@
             </div>
         </div>
 
-        <!-- Error Message -->
         <div id="error-message" class="hidden mt-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
             <p><strong class="font-bold">Error: </strong><span id="error-text"></span></p>
         </div>
@@ -138,6 +128,7 @@
         const reuploadButton = document.getElementById('reupload-button');
         const fileNameSuccess = document.getElementById('file-name-success');
         const fileNameDisplay = document.getElementById('file-name-display');
+        const uploadStatus = document.getElementById('upload-status');
         
         const initialPromptSection = document.getElementById('initial-prompt-section');
         const promptInput = document.getElementById('prompt');
@@ -162,28 +153,31 @@
             initialPromptSection.classList.remove('hidden');
             resultContainer.classList.add('hidden');
             chatHistoryDiv.innerHTML = '';
+            uploadStatus.textContent = 'Uploading...';
             hideError();
         };
 
-        const handleFile = (file) => {
+        const handleFile = async (file) => {
             if (!file) return;
             
             const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
             const isDocx = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.endsWith('.docx');
+            const isImage = file.type.startsWith('image/');
 
-            if (!isPdf && !isDocx) {
-                showError("Please upload a valid PDF or DOCX file.");
+            if (!isPdf && !isDocx && !isImage) {
+                showError("Please upload a valid PDF, DOCX, or Image file.");
                 return;
             }
             
             resetAll();
             dropZone.classList.add('is-uploading');
 
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const arrayBuffer = e.target.result;
-                    if (isPdf) {
+            try {
+                if (isPdf) {
+                    uploadStatus.textContent = 'Processing PDF...';
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const arrayBuffer = e.target.result;
                         const typedarray = new Uint8Array(arrayBuffer);
                         const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
                         let text = '';
@@ -193,22 +187,45 @@
                             text += content.items.map(item => item.str).join(' ') + '\n';
                         }
                         documentText = text;
-                    } else if (isDocx) {
+                        onFileProcessed(file);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else if (isDocx) {
+                    uploadStatus.textContent = 'Processing DOCX...';
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const arrayBuffer = e.target.result;
                         const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                         documentText = result.value;
-                    }
-                    
-                    dropZone.classList.remove('is-uploading');
-                    dropZone.classList.add('is-success');
-                    fileNameSuccess.textContent = file.name;
-
-                } catch (err) {
-                    console.error("File parsing error:", err);
-                    showError("Could not read the document. It might be corrupted or protected.");
-                    resetAll();
+                        onFileProcessed(file);
+                    };
+                    reader.readAsArrayBuffer(file);
+                } else if (isImage) {
+                    uploadStatus.textContent = 'Performing OCR...';
+                    const { data: { text } } = await Tesseract.recognize(
+                        file,
+                        'eng',
+                        { logger: m => {
+                            if (m.status === 'recognizing text') {
+                                uploadStatus.textContent = `Recognizing Text: ${Math.round(m.progress * 100)}%`;
+                            }
+                        } }
+                    );
+                    documentText = text;
+                    onFileProcessed(file);
                 }
-            };
-            reader.readAsArrayBuffer(file);
+
+            } catch (err) {
+                console.error("File parsing error:", err);
+                showError("Could not read the document. It might be corrupted, protected, or an unsupported format.");
+                resetAll();
+            }
+        };
+
+        const onFileProcessed = (file) => {
+            dropZone.classList.remove('is-uploading');
+            dropZone.classList.add('is-success');
+            fileNameSuccess.textContent = file.name;
         };
         
         const appendMessage = (sender, message) => {
