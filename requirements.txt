@@ -1,38 +1,38 @@
 1. End-User Requirements (Using the Live App)
->To use the deployed web application, a person only needs:
+  >To use the deployed web application, a person only needs:
 
 A Modern Web Browser
->Any up-to-date browser like Chrome, Firefox, Safari, or Edge that supports modern JavaScript.
+  >Any up-to-date browser like Chrome, Firefox, Safari, or Edge that supports modern JavaScript.
 
 An Internet Connection
->To access the web page and for the app to communicate with the backend API.
+  >To access the web page and for the app to communicate with the backend API.
 
 2. Deployment Environment Requirements (For Hosting)
->To host and run the application (for example, on Vercel), you need:
+  >To host and run the application (for example, on Vercel), you need:
 
 A Vercel Account (or a similar serverless hosting platform)
->The project is designed to be deployed as a serverless application.
+  >The project is designed to be deployed as a serverless application.
 
 **Google Gemini API Key**
->This is the most critical requirement. You must have a valid API key from Google AI Studio.
+  >This is the most critical requirement. You must have a valid API key from Google AI Studio.
 
 Environment Variable Configuration
->The hosting environment must be configured with an environment variable named GEMINI_API_KEY containing your API key. This is crucial for the backend to make authenticated requests to the Gemini API.
+  >The hosting environment must be configured with an environment variable named GEMINI_API_KEY containing your API key. This is crucial for the backend to make authenticated requests to the Gemini API.
 
 3. Developer Requirements (To Run or Modify Locally)
->If you want to clone the project and modify it on your local machine, you will need:
+  >If you want to clone the project and modify it on your local machine, you will need:
 
 Git
->To clone the repository from its source.
+  >To clone the repository from its source.
 
 A Code Editor
->Such as VS Code, Sublime Text, or any other editor for modifying HTML and JavaScript files.
+  >Such as VS Code, Sublime Text, or any other editor for modifying HTML and JavaScript files.
 
 A Local Web Server
->To serve the index.html file so that the browser can properly handle API requests. You can use simple tools like the "Live Server" extension in VS Code.
+  >To serve the index.html file so that the browser can properly handle API requests. You can use simple tools like the "Live Server" extension in VS Code.
 
 Vercel CLI (Optional)
->If you want to test the serverless function locally before deploying, installing the Vercel CLI is the best way to replicate the production environment.
+  >If you want to test the serverless function locally before deploying, installing the Vercel CLI is the best way to replicate the production environment.
 
 A .env file
->In the project's root directory, you would need a .env file containing your GEMINI_API_KEY for the Vercel CLI to use for local testing. This file is correctly ignored by Git to prevent accidentally sharing your key.
+  >In the project's root directory, you would need a .env file containing your GEMINI_API_KEY for the Vercel CLI to use for local testing. This file is correctly ignored by Git to prevent accidentally sharing your key.
