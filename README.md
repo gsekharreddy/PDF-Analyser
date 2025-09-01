@@ -1,5 +1,5 @@
 **📄 Document Analyzer**
-<p align="center"> <img src="https://img.shields.io/badge/Powered%20by-Google%20Gemini-4285F4?logo=google&logoColor=white&style=for-the-badge" /> <img src="https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel&style=for-the-badge" /> <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4-red?style=for-the-badge" /> <img src="https://img.shields.io/github/stars/gsekharreddy/pdf-analyser?style=for-the-badge&color=yellow" /> <img src="https://img.shields.io/github/forks/gsekharreddy/pdf-analyser?style=for-the-badge&color=green" /> </p> <p align="center"> 🚀 **Instant Insights from Your Documents** — Upload ➝ Ask ➝ Get Answers </p>
+<p align="center"> <img src="https://img.shields.io/badge/Powered%20by-Google%20Gemini-4285F4?logo=google&logoColor=white&style=for-the-badge" /> <img src="https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel&style=for-the-badge" /> <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4-red?style=for-the-badge" />  </p> <p align="center"> 🚀 **Instant Insights from Your Documents** — Upload ➝ Ask ➝ Get Answers </p>
 **✨ Features**
 
 Multi-Format Support: Analyze a wide range of document types:
