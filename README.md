@@ -92,13 +92,14 @@ Want to change the model? Easy!
 Open /api/analyze.js
 
 Find this line:
-
+```js
 const modelName = 'gemini-1.5-flash-latest';
-
+```
 
 Replace with another supported model, e.g.:
-
+```js
 const modelName = 'gemini-1.5-pro-latest';
+```
 
 **💻 Tech Stack**
 
